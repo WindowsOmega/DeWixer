@@ -20,8 +20,6 @@ if " error" in url:
     error_flag = 1
     url = url.replace(" error", "")
     print("Error flag flagged!")
-
-
 prog_bar = tqdm(total=100, desc="Making HTML", unit="%", ncols=100) 
 prog_bar.update(12.5)
 username = os.getlogin()
@@ -127,6 +125,7 @@ fixed_lines = []
 for line in lines:
     line = line.replace('https://.neocities.org//', f'https://{nctag}.neocities.org/')
     line = line.replace('https://.neocities.org/favicon.ico', f'https://{nctag}.neocities.org/favicon.ico')
+    line = line.replace('Â', '')
     if debug_flag == 1:
         print("Fixed Errored URL")
     fixed_lines.append(line)
