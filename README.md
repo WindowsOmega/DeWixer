@@ -10,3 +10,5 @@ DeWixer is a Python program that removes Wix ads, and converts a Wix link to Neo
 * os
 * time
 * pycurl
+* shutil
+* datetime
