@@ -1,5 +1,7 @@
 import os
 import time
+import shutil
+from datetime import datetime
 from tqdm import tqdm
 import pycurl
 from io import BytesIO
@@ -8,6 +10,7 @@ import re
 from bs4 import BeautifulSoup
 
 debug_flag = 0
+archive_base = 'Site Archives'
 
 # To find
 error_flag = 0
@@ -41,7 +44,22 @@ if "/" in url:
 filename = f"{result}.html"
 curl_get_and_save(url, filename)
 
+def archive_file(src_file_path):
+    documents_folder = os.path.expanduser("~/Documents")
+    archives_folder = os.path.join(documents_folder, "Site Archives")
+    os.makedirs(archives_folder, exist_ok=True)
+    date_str = datetime.now().strftime("%m-%d-%Y")
+    dated_folder = os.path.join(archives_folder, date_str)
+    os.makedirs(dated_folder, exist_ok=True)
+    file_name = os.path.basename(src_file_path)
+    dest_file_path = os.path.join(dated_folder, file_name)
+    shutil.copy2(src_file_path, dest_file_path)
+
+    print(f"File copied to: {dest_file_path}")
+
 filepath = f'C:\\Users\\{username}\\Downloads\\' + filename
+archive_file(filepath)
+
 prog_bar.update(12.5)
 # Word Finder+
 if '"' in filepath:
@@ -74,7 +92,7 @@ def dewixer():
     global nctag
     global main
     try:
-        with open(filepath, 'r') as file:
+        with open(filepath, 'r', encoding="utf-8") as file:
             lines = file.readlines()
     except FileNotFoundError:
         print(f"Error: File not found at {filepath}")
@@ -99,7 +117,7 @@ def dewixer():
         line = line.replace('https://www.wix.com/favicon.ico', f'https://{nctag}.neocities.org/favicon.ico')
         modified_lines.append(line)
 
-    with open(filepath, 'w') as file:
+    with open(filepath, 'w', encoding="utf-8") as file:
         for line in modified_lines:
             file.write(line)
             if debug_flag == 1:
@@ -116,7 +134,7 @@ dewixer()
 time.sleep(1)
 
 try:
-    with open(filepath, 'r') as file:
+    with open(filepath, 'r', encoding="utf-8") as file:
             lines = file.readlines()
 except FileNotFoundError:
         print(f"Error: File not found at {filepath}")
