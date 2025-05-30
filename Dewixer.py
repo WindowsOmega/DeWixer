@@ -27,38 +27,37 @@ prog_bar = tqdm(total=100, desc="Making HTML", unit="%", ncols=100)
 prog_bar.update(12.5)
 username = os.getlogin()
 
-def curl_get_and_save(url, filename):
+def curl_get_and_save(url, filename, wts):
     try:
-        command = ["curl", "-o", f'C:\\Users\\{username}\\Downloads\\' + filename, url]
-        subprocess.run(command, check=True, capture_output=True)
-        print(f"Successfully downloaded content from {url} and saved to {filename}")
+        if wts == 0:
+            command = ["curl", "-o", f'C:\\Users\\{username}\\Downloads\\' + filename, url]
+            subprocess.run(command, check=True, capture_output=True)
+            print(f"Successfully downloaded content from {url} and saved to {filename}")
+        if wts == 1:
+            documents_folder = os.path.expanduser("~\\Documents")
+            archives_folder = os.path.join(documents_folder, "Site Archives")
+            os.makedirs(archives_folder, exist_ok=True)
+            date_str = datetime.now().strftime("%m-%d-%Y")
+            dated_folder = os.path.join(archives_folder, date_str)
+            os.makedirs(dated_folder, exist_ok=True)
+            command = ["curl", "-o", dated_folder + f"\\{filename}", url]
+            subprocess.run(command, check=True, capture_output=True)
+            print(f"Successfully downloaded content from {url} and saved to {filename}")
     except subprocess.CalledProcessError as e:
          print(f"Error executing curl command: {e}")
     except FileNotFoundError:
         print("Error: curl command not found. Please ensure curl is installed and in your system's PATH.")
 prog_bar.update(12.5)
+
 # cURL 
 if "/" in url:
     oldurl = url
     result = oldurl.rsplit('/', 1)[-1]
 filename = f"{result}.html"
-curl_get_and_save(url, filename)
+curl_get_and_save(url, filename, 0)
 
-def archive_file(src_file_path):
-    documents_folder = os.path.expanduser("~/Documents")
-    archives_folder = os.path.join(documents_folder, "Site Archives")
-    os.makedirs(archives_folder, exist_ok=True)
-    date_str = datetime.now().strftime("%m-%d-%Y")
-    dated_folder = os.path.join(archives_folder, date_str)
-    os.makedirs(dated_folder, exist_ok=True)
-    file_name = os.path.basename(src_file_path)
-    dest_file_path = os.path.join(dated_folder, file_name)
-    shutil.copy2(src_file_path, dest_file_path)
-
-    print(f"File copied to: {dest_file_path}")
 
 filepath = f'C:\\Users\\{username}\\Downloads\\' + filename
-archive_file(filepath)
 
 prog_bar.update(12.5)
 # Word Finder+
@@ -87,10 +86,12 @@ prog_bar.update(12.5)
 
 def dewixer():
     global debug_flag
+    global filename
     global filepath
     global url
     global nctag
     global main
+    global n_url_arch
     try:
         with open(filepath, 'r', encoding="utf-8") as file:
             lines = file.readlines()
@@ -114,6 +115,9 @@ def dewixer():
         line = line.replace('wixsite.com', 'neocities.org')
         line = line.replace(main, '')
         line = re.sub(f'https://{nctag}.neocities.org/+', f'https://{nctag}.neocities.org/', line)
+        old_fn = filename
+        n_url_arch = f"https://{nctag}.neocities.org/" + filename.replace(".html", "")
+        filename = old_fn
         line = line.replace('https://www.wix.com/favicon.ico', f'https://{nctag}.neocities.org/favicon.ico')
         modified_lines.append(line)
 
@@ -150,6 +154,7 @@ for line in lines:
 prog_bar.update(12.5)
 with open(filepath, 'w', encoding='utf-8') as file:
     file.writelines(fixed_lines)
+curl_get_and_save(n_url_arch, filename, 1)
 
 
 if '.txt' in filepath:
