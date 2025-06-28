@@ -8,12 +8,17 @@ from io import BytesIO
 import subprocess
 import re
 from bs4 import BeautifulSoup
+import base64
+from neocities import NeoCities
 
+
+api_av = 1
 debug_flag = 0
 archive_base = 'Site Archives'
 
 # To find
 error_flag = 0
+username = os.getlogin()
 url = input("What URL do we have here? ")
 if " -d" in url:
     debug_flag = 1
@@ -23,9 +28,36 @@ if " error" in url:
     error_flag = 1
     url = url.replace(" error", "")
     print("Error flag flagged!")
+if " -aset" in url:
+    url = url.replace(" -aset", "")
+    api_key = input("What is your Neocites API key? (make sure no one knows it) ")
+    string_bytes = api_key.encode('utf-8')
+    encoded_bytes = base64.b64encode(string_bytes)
+    base64_string = encoded_bytes.decode('ascii')
+    fileapi = open(f"C:\\Users\\{username}\\Documents\\Neoapi.txt", "w")
+    fileapi.write(base64_string)
+    fileapi = "C:\\Users\\" + username + "\\Documents\\Neoapi.txt"
+    with open(fileapi, 'r') as file:
+        key64 = file.read()
+    apik = base64.b64decode(key64)
+    decoded_string = apik.decode('utf-8')
+    nc = NeoCities(key=decoded_string)
+else:
+    try:
+        fileapi = "C:\\Users\\" + username + "\\Documents\\Neoapi.txt"
+        with open(fileapi, 'r') as file:
+            key64 = file.read()
+        apik = base64.b64decode(key64)
+        decoded_string = apik.decode('utf-8')
+        nc = NeoCities(key=decoded_string)    
+    except FileNotFoundError:
+        print("You have not added a Neocities API key. However, this script will continue to add the HTML doc manually.")
+        api_av = 0
+        pass
+    
 prog_bar = tqdm(total=100, desc="Making HTML", unit="%", ncols=100) 
 prog_bar.update(12.5)
-username = os.getlogin()
+
 
 def curl_get_and_save(url, filename, wts):
     try:
@@ -179,4 +211,6 @@ if error_flag == 1:
         file.write(str(soup))
     print("Error page created")
 prog_bar.update(12.5)
+if api_av == 1:
+    nc.upload((filename, filepath))
 time.sleep(1)
