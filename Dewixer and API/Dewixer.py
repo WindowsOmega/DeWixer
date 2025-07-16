@@ -282,6 +282,39 @@ def js_div(input_file_path, output_file_path, div_id, new_content):
         with open(output_file_path, 'w', encoding='utf-8') as file:
             file.write(updated_content)
         print("Content replaced successfully.")
+    else:
+        pattern = rf'<div id="{div_id}" class="[^"]*">.+?</div>'
+        print(pattern)
+        matches3 = re.findall(pattern, content, re.DOTALL)
+        if matches3:
+            updated_content = re.sub(pattern, new_content, content, flags=re.DOTALL)
+            with open(output_file_path, 'w', encoding='utf-8') as file:
+                file.write(updated_content)
+            print("Content replaced successfully.")
+
+def js_div_embed(input_file_path, output_file_path, div_id, new_content):
+    with open(input_file_path, 'r', encoding='utf-8') as file:
+        content = file.read()
+
+    pattern = rf'<div class="[^"]*" id="{div_id}">.+?</div></wix-iframe></div>'
+    print(pattern)
+    matches3 = re.findall(pattern, content, re.DOTALL)
+
+    if matches3:
+        updated_content = re.sub(pattern, new_content, content, flags=re.DOTALL)
+
+        with open(output_file_path, 'w', encoding='utf-8') as file:
+            file.write(updated_content)
+        print("Content replaced successfully.")
+    else:
+        pattern = rf'<div id="{div_id}" class="[^"]*">.+?</div></wix-iframe></div>'
+        print(pattern)
+        matches3 = re.findall(pattern, content, re.DOTALL)
+        if matches3:
+            updated_content = re.sub(pattern, new_content, content, flags=re.DOTALL)
+            with open(output_file_path, 'w', encoding='utf-8') as file:
+                file.write(updated_content)
+            print("Content replaced successfully.")
 
 def remove_path(file_paths, path_to_remove):
     if path_to_remove in file_paths:
@@ -290,13 +323,46 @@ def remove_path(file_paths, path_to_remove):
     else:
         print(f"Path '{path_to_remove}' not found in the list.")
 
+def css_div(input_file_path, output_file_path, new_content):
+    with open(input_file_path, 'r', encoding='utf-8') as file:
+        content = file.read()
+
+    pattern = r'(<style)(.+?)(</style>)'
+    print(pattern)
+    matches3 = re.findall(pattern, content, re.DOTALL)
+
+    if matches3:
+        updated_content = re.sub(pattern, r'\1' + " " + new_content + r'\2' + r'\3', content, flags=re.DOTALL)
+
+        with open(output_file_path, 'w', encoding='utf-8') as file:
+            file.write(updated_content)
+        print("Content replaced successfully.")
+    else:
+        print("Content replaced successfully.")
+
 js_filename = read_file_and_process(os.path.expanduser("~\\Documents") + "\\customjs.txt")
 for path in js_filename:
     js_div_name = path.replace(".txt", "")
+    js_div_name = js_div_name.replace("--js", "")
+    if js_div_name in matches:
+        print("Embed JS found.")
+        with open(os.path.expanduser("~\\Documents") + f"\\{path}", 'r', encoding='utf-8') as file:
+            content = file.read()
+        js_div_embed(filepath, filepath, js_div_name, content)
+    else:
+        print(js_div_name)
+        with open(os.path.expanduser("~\\Documents") + f"\\{path}", 'r', encoding='utf-8') as file:
+            content = file.read()
+        js_div(filepath, filepath, js_div_name, content)
+
+css_filename = read_file_and_process(os.path.expanduser("~\\Documents" + "\\customcss.txt"))
+for path in css_filename:
+    css_div_name = path.replace(".txt", "")
+    css_div_name = css_div_name.replace("--css", "")
+    print(css_div_name)
     with open(os.path.expanduser("~\\Documents") + f"\\{path}", 'r', encoding='utf-8') as file:
         content = file.read()
-    js_div(filepath, filepath, js_div_name, content)
-
+    css_div(filepath, filepath, content)
 
 if '.txt' in filepath:
     oldfilepath = filepath
