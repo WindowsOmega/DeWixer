@@ -72,9 +72,18 @@ def curl_get_and_save(url, filename, wts):
             date_str = datetime.now().strftime("%m-%d-%Y")
             dated_folder = os.path.join(archives_folder, date_str)
             os.makedirs(dated_folder, exist_ok=True)
-            command = ["curl", "-o", dated_folder + f"\\{filename}", url]
+            rounds = 1
+            n_filename = filename
+            while True:
+                if os.path.exists(dated_folder + f"\\{n_filename}"):
+                    n_filename = n_filename.replace(".html", "")
+                    n_filename = n_filename + f" ({rounds})" + ".html"
+                    rounds = rounds + 1
+                else:
+                    break
+            command = ["curl", "-o", dated_folder + f"\\{n_filename}", url]
             subprocess.run(command, check=True, capture_output=True)
-            print(f"Successfully downloaded content from {url} and saved to {filename}")
+            print(f"Successfully downloaded content from {url} and saved to {n_filename}")
     except subprocess.CalledProcessError as e:
          print(f"Error executing curl command: {e}")
     except FileNotFoundError:
@@ -100,7 +109,11 @@ if '.html' in filepath:
     oldnewfilepath = oldfilepath.replace('.html', '.')
     print(oldnewfilepath)
     newfilepath = oldnewfilepath + 'txt'
-    os.rename(filepath, newfilepath)
+    try:
+        os.rename(filepath, newfilepath)
+    except FileExistsError:
+        os.remove(newfilepath)
+        os.rename(filepath, newfilepath)
     print("Renamed", filepath)
     filepath = newfilepath
 prog_bar.update(12.5)
@@ -188,6 +201,74 @@ with open(filepath, 'w', encoding='utf-8') as file:
     file.writelines(fixed_lines)
 curl_get_and_save(n_url_arch, filename, 1)
 
+def find_dynamic_key_value_pairs(filepath):
+    with open(filepath, 'r') as file:
+        file_content = file.read()
+        
+    pattern = r'"([^"]+)":\s*"HtmlComponent"'
+    matches = re.findall(pattern, file_content)
+    return matches
+
+
+
+matches = find_dynamic_key_value_pairs(filepath)
+print("Found embeds:", matches)
+matchess = 0
+times_embed = len(matches)
+def extract_div_content(file_path):
+
+    div_pattern = r'<div id=".*?" class=".*?">(.*?)</div>'
+
+    with open(file_path, 'r', encoding='utf-8') as file:
+        content = file.read()
+
+    matches2 = re.findall(div_pattern, content, re.DOTALL)
+
+    return matches2
+
+def find_and_replace_div(input_file_path, output_file_path, div_id, new_content):
+    with open(input_file_path, 'r', encoding='utf-8') as file:
+        content = file.read()
+
+    pattern = rf'<div class="[^"]*" id="{div_id}"></div>'
+    print(pattern)
+    matches3 = re.findall(pattern, content, re.DOTALL)
+
+    if matches3:
+        updated_content = re.sub(pattern, new_content, content, flags=re.DOTALL)
+
+        with open(output_file_path, 'w', encoding='utf-8') as file:
+            file.write(updated_content)
+        print("Content replaced successfully.")
+    else:
+        pattern = rf'<div id="{div_id}" class="[^"]*"></div>'
+        print(pattern)
+        matches3 = re.findall(pattern, content, re.DOTALL)
+        if matches3:
+            updated_content = re.sub(pattern, new_content, content, flags=re.DOTALL)
+            with open(output_file_path, 'w', encoding='utf-8') as file:
+                file.write(updated_content)
+            print("Content replaced successfully.")
+        else:
+            print("No matching div found.")
+
+for i in range(times_embed):
+    embed_cur = matches[matchess]
+    try:
+        fileembed = "C:\\Users\\" + username + "\\Documents\\" + embed_cur + ".txt"
+        with open(fileembed, 'r', encoding='utf-8') as file:
+            content = file.read()
+        print(content)
+        find_and_replace_div(filepath, filepath, embed_cur, content)
+        matchess = matchess + 1
+    except FileNotFoundError:
+        cur_wixiframe= input(f"You have not added the {embed_cur}'s wix-iframe id(s). Go to the GitHub page for more info. Paste it here. ")
+        fileembed = "C:\\Users\\" + username + "\\Documents\\" + embed_cur + ".txt"
+        with open(fileembed, 'w', encoding='utf-8') as file:
+            file.write(cur_wixiframe)
+            find_and_replace_div(filepath, filepath, embed_cur, cur_wixiframe)
+            matchess = matchess + 1
+            pass
 
 if '.txt' in filepath:
     oldfilepath = filepath
