@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 import base64
 from neocities import NeoCities
 
-
+lmproj_aero_fd = 0
 api_av = 1
 debug_flag = 0
 archive_base = 'Site Archives'
@@ -138,27 +138,48 @@ def dewixer():
     global nctag
     global main
     global n_url_arch
+    global lmproj_aero_fd
     try:
         with open(filepath, 'r', encoding="utf-8") as file:
             lines = file.readlines()
     except FileNotFoundError:
         print(f"Error: File not found at {filepath}")
         return
-    match = re.search(r'https://([^.]+)\.wixsite\.com', url)
-    if match:
-        nctag = match.group(1)
-        print(f'nctag is {nctag}')
-    suburl = re.search(r'wixsite\.com/([^/]+)', url)
-    if suburl:
-        main = suburl.group(1)
-        print(f'main is {main}')
-    else:
-        main = ''
+    if "wixstudio" in url:
+        wix_domain = "wixstudio"
+        match = re.search(r'https://([^.]+)\.wixstudio\.com', url)
+        if match:
+            nctag = match.group(1)
+            print(f'nctag is {nctag}')
+            if "landmphone" in nctag:
+                lmproj_aero_fd = 1
+        suburl = re.search(r'wixstudio\.com/([^/]+)', url)
+        if suburl:
+            main = suburl.group(1)
+            print(f'main is {main}')
+        else:
+            main = ''
+    if "wixsite" in url:
+        wix_domain = "wixsite"
+        match = re.search(r'https://([^.]+)\.wixsite\.com', url)
+        if match:
+            nctag = match.group(1)
+            print(f'nctag is {nctag}')
+            if "landmphone" in nctag:
+                lmproj_aero_fd = 1
+        suburl = re.search(r'wixsite\.com/([^/]+)', url)
+        if suburl:
+            main = suburl.group(1)
+            print(f'main is {main}')
+        else:
+            main = ''
     modified_lines = []
     for line in lines:
         line = line.replace('--wix-ads-height:50px;', '--wix-ads-height:0px;')
         line = line.replace('--wix-ads-top-height:50px;', '--wix-ads-top-height:0px;')
-        line = line.replace('wixsite.com', 'neocities.org')
+        line = line.replace('--wix-ads-height:30px;', '--wix-ads-height:0px;')
+        line = line.replace('--wix-ads-top-height:30px;', '--wix-ads-top-height:0px;')
+        line = line.replace(f'{wix_domain}.com', 'neocities.org')
         line = line.replace(main, '')
         line = re.sub(f'https://{nctag}.neocities.org/+', f'https://{nctag}.neocities.org/', line)
         old_fn = filename
@@ -271,26 +292,27 @@ def read_file_and_process(file_name):
 def js_div(input_file_path, output_file_path, div_id, new_content):
     with open(input_file_path, 'r', encoding='utf-8') as file:
         content = file.read()
+    pattern = rf'<div class="[^"]*" id="{div_id}">.+?</div>(?!\s*</div>)'
+    print(f"Pattern: {pattern}")
+    
+    matches = re.findall(pattern, content, re.DOTALL)
 
-    pattern = rf'<div class="[^"]*" id="{div_id}">.+?</div>'
-    print(pattern)
-    matches3 = re.findall(pattern, content, re.DOTALL)
-
-    if matches3:
+    if matches:
         updated_content = re.sub(pattern, new_content, content, flags=re.DOTALL)
-
         with open(output_file_path, 'w', encoding='utf-8') as file:
             file.write(updated_content)
-        print("Content replaced successfully.")
+        print("Content replaced successfully with no </div>.")
     else:
-        pattern = rf'<div id="{div_id}" class="[^"]*">.+?</div>'
-        print(pattern)
-        matches3 = re.findall(pattern, content, re.DOTALL)
-        if matches3:
+        pattern = rf'<div class="[^"]*" id="{div_id}">.+?</div>(?!\s*</div>)'
+        print(f"Pattern: {pattern}")
+        
+        matches = re.findall(pattern, content, re.DOTALL)
+        if matches:
             updated_content = re.sub(pattern, new_content, content, flags=re.DOTALL)
+            
             with open(output_file_path, 'w', encoding='utf-8') as file:
                 file.write(updated_content)
-            print("Content replaced successfully.")
+            print("Content replaced successfully with no </div>.")
 
 def js_div_embed(input_file_path, output_file_path, div_id, new_content):
     with open(input_file_path, 'r', encoding='utf-8') as file:
@@ -323,22 +345,6 @@ def remove_path(file_paths, path_to_remove):
     else:
         print(f"Path '{path_to_remove}' not found in the list.")
 
-def css_div(input_file_path, output_file_path, new_content):
-    with open(input_file_path, 'r', encoding='utf-8') as file:
-        content = file.read()
-
-    pattern = r'(<style)(.+?)(</style>)'
-    print(pattern)
-    matches3 = re.findall(pattern, content, re.DOTALL)
-
-    if matches3:
-        updated_content = re.sub(pattern, r'\1' + " " + new_content + r'\2' + r'\3', content, flags=re.DOTALL)
-
-        with open(output_file_path, 'w', encoding='utf-8') as file:
-            file.write(updated_content)
-        print("Content replaced successfully.")
-    else:
-        print("Content replaced successfully.")
 
 js_filename = read_file_and_process(os.path.expanduser("~\\Documents") + "\\customjs.txt")
 for path in js_filename:
@@ -355,14 +361,6 @@ for path in js_filename:
             content = file.read()
         js_div(filepath, filepath, js_div_name, content)
 
-css_filename = read_file_and_process(os.path.expanduser("~\\Documents" + "\\customcss.txt"))
-for path in css_filename:
-    css_div_name = path.replace(".txt", "")
-    css_div_name = css_div_name.replace("--css", "")
-    print(css_div_name)
-    with open(os.path.expanduser("~\\Documents") + f"\\{path}", 'r', encoding='utf-8') as file:
-        content = file.read()
-    css_div(filepath, filepath, content)
 
 if '.txt' in filepath:
     oldfilepath = filepath
@@ -372,6 +370,16 @@ if '.txt' in filepath:
     os.rename(filepath, newfilepath)
     print("Renamed", filepath)
     filepath = newfilepath
+if lmproj_aero_fd == 1:
+    with open(filepath, "r", encoding="utf-8") as file:
+        html = file.read()
+    soup = BeautifulSoup(html, "html.parser")
+    footer = soup.find("footer", id="SITE_FOOTER")
+    if footer:
+        footer.decompose()
+    with open(filepath, "w", encoding="utf-8") as file:
+        file.write(str(soup))
+    print("Land Proj Aero footer is gone!")
 if error_flag == 1:
     with open(filepath, "r", encoding="utf-8") as file:
         html = file.read()
@@ -388,4 +396,3 @@ if error_flag == 1:
 prog_bar.update(12.5)
 if api_av == 1:
     nc.upload((filename, filepath))
-time.sleep(1)
